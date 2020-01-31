@@ -61,3 +61,8 @@
 | rom.h | ROM头文件 |
 | timer.h | 计时器头文件 |
 | uart.h | UART头文件 |
+
+## 更新记录
+
+> 2020.1.31-----完成BUS总线部分verilog代码及文档编写  
+> To be continued...
