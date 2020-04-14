@@ -56,3 +56,70 @@ module ex_reg (
     output reg  [`WordDataBus]  ex_out          //  Processing result
 );
 
+    /***** Pipeline Register *****/
+    always @(posedge clk or `RESET_EDGE reset) begin
+        /* Asynchronous Reset */
+        if (reset == `RESET_ENABLE) begin 
+            ex_pc           <= #1 `WORD_ADDR_W'h0;
+            ex_en           <= #1 `DISABLE;
+            ex_br_flag      <= #1 `DISABLE;
+            ex_mem_op       <= #1 `MEM_OP_NOP;
+            ex_mem_wr_data  <= #1 `WORD_DATA_W'h0;
+            ex_ctrl_op      <= #1 `CTRL_OP_NOP;
+            ex_dst_addr     <= #1 `REG_ADDR_W'd0;
+            ex_gpr_we_      <= #1 `DISABLE;
+            ex_exp_code     <= #1 `ISA_EXP_NO_EXP;
+            ex_out          <= #1 `WORD_DATA_W'h0;
+        end else begin 
+            /* Update pipeline Register */
+            if (stall == `DISABLE) begin 
+                if (flush == `ENABLE) begin         //  Flush
+                    ex_pc           <= #1 `WORD_ADDR_W'h0;
+                    ex_en           <= #1 `DISABLE;
+                    ex_br_flag      <= #1 `DISABLE;
+                    ex_mem_op       <= #1 `MEM_OP_NOP;
+                    ex_mem_wr_data  <= #1 `WORD_DATA_W'h0;
+                    ex_ctrl_op      <= #1 `CTRL_OP_NOP;
+                    ex_dst_addr     <= #1 `REG_ADDR_W'd0;
+                    ex_gpr_we_      <= #1 `DISABLE_;
+                    ex_exp_code     <= #1 `ISA_EXP_NO_EXP;
+                    ex_out          <= #1 `WORD_DATA_W'h0;
+                end else if (int_detect == `ENABLE) begin   //  Interrupt detection
+                    ex_pc           <= #1 id_pc;
+                    ex_en           <= #1 id_en;
+                    ex_br_flag      <= #1 id_br_flag;
+                    ex_mem_op       <= #1 `MEM_OP_NOP;
+                    ex_mem_wr_data  <= #1 `WORD_DATA_W'h0;
+                    ex_ctrl_op      <= #1 `CTRL_OP_NOP;
+                    ex_dst_addr     <= #1 `REG_ADDR_W'd0;
+                    ex_gpr_we_      <= #1 `DISABLE_;
+                    ex_exp_code     <= #1 `ISA_EXP_EXT_INT;
+                    ex_out          <= #1 `WORD_DATA_W'h0;
+                end else if (alu_of == `ENABLE) begin       //  Arithmetic overflow
+                    ex_pc           <= #1 id_pc;
+                    ex_en           <= #1 id_en;
+                    ex_br_flag      <= #1 id_br_flag;
+                    ex_mem_op       <= #1 `MEM_OP_NOP;
+                    ex_mem_wr_data  <= #1 `WORD_DATA_W'h0;
+                    ex_ctrl_op      <= #1 `CTRL_OP_NOP;
+                    ex_dst_addr     <= #1 `REG_ADDR_W'd0;
+                    ex_gpr_we_      <= #1 `DISABLE_;
+                    ex_exp_code     <= #1 `ISA_EXP_OVERFLOW;
+                    ex_out          <= #1 `WORD_DATA_W'h0;
+                end else begin                              //  Next data
+                    ex_pc		   <= #1 id_pc;
+					ex_en		   <= #1 id_en;
+					ex_br_flag	   <= #1 id_br_flag;
+					ex_mem_op	   <= #1 id_mem_op;
+					ex_mem_wr_data <= #1 id_mem_wr_data;
+					ex_ctrl_op	   <= #1 id_ctrl_op;
+					ex_dst_addr	   <= #1 id_dst_addr;
+					ex_gpr_we_	   <= #1 id_gpr_we_;
+					ex_exp_code	   <= #1 id_exp_code;
+					ex_out		   <= #1 alu_out;
+                end
+            end
+        end
+    end
+
+endmodule
